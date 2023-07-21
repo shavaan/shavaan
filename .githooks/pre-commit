@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+LC_ALL=C
+
+local_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+valid_branch_regex="^(feature|bugfix|hotfix)\/[a-zA-Z]+-[0-9]+[a-zA-Z\-_.]*$"
+
+message="Branch name validation failed.
+There is something wrong with your branch name. 
+
+Branch names in this project must adhere to this schema: 
+$valid_branch_regex. 
+
+For example, 
+ - feature/jira-1234
+ - feature/jira-1234-short-description
+
+Your commit has been rejected. Rename your branch to a valid name and try again.
+"
+
+if [[ ! $local_branch =~ $valid_branch_regex ]]
+then
+    echo "$message"
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,68 @@
+name: Snyk Docker Image Scan
+
+env:
+  USER_NAME: ${{ secrets.TEST_ACR_UNAME }}
+  PASSWORD: ${{ secrets.TEST_ACR_PASSW }}
+  ARTIFACTORY_USER: ${{ secrets.TEST_ART_UNAME }}
+  ARTIFACTORY_PASSWORD: ${{ secrets.TEST_ART_PASSW }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ develop, release ]
+  pull_request:
+    branches: [ develop, aks-dev, release ]
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+
+jobs:
+  SnykDockerImageScan:
+    name: Build Image & Snyk Scan
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on: [self-hosted, x64, Linux, ets, prod2, gwam]
+    outputs:
+      imageTag: test
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Connecting to Azure Container Registry ( ACR )
+        uses: azure/docker-login@v1
+        with:
+          login-server: "caaksprodcacacr.azurecr.io"
+          username: ${{env.USER_NAME}}
+          password: ${{env.PASSWORD}}
+
+      - name: Creating docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: |
+            "ARTIFACTORY_USER=${{ env.ARTIFACTORY_USER }}"
+            "ARTIFACTORY_PASSWORD=${{ env.ARTIFACTORY_PASSWORD }}"
+            "ARTIFACT_USR=${{ env.ARTIFACTORY_USER }}"
+            "ARTIFACT_PASS=${{ env.ARTIFACTORY_PASSWORD }}"
+            "NEWRELIC_KEY=${{secrets.GWAM_NEWRELIC_NONPROD_LICENSE}}"
+            "APP_ENV=dev"
+          push: false
+          tags: test
+
+      - name: Scan App Image
+        id: scan
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.GWAM_SNYK_TOKEN }}
+        with:
+          image: test
+          args: -d --exclude-app-vulns --file=Dockerfile
+          sarif: true
+          
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk.sarif

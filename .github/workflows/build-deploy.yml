@@ -1,0 +1,59 @@
+name: Build and Deploy - ALL Env
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        required: true
+        default: dev
+        description: Deploy to
+        options:
+        - dev
+        - tst  
+        - uat-cac
+        - uat-cae
+        - uat
+        - prd-cac
+        - prd-cae
+        - prd
+      changeTicketNumber:
+          description: "Enter CR Number (Mandatory for PROD Deployments)"
+          required: false
+      branch:
+        required: true
+        description: "Enter the branch name which needs to be deployed"
+        default: develop
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+
+jobs:
+  BuildDeploy:
+    uses: manulife-gwam/codescanworkflows/.github/workflows/scan-snyk-reusable-aks-v1.yml@devopstrn     
+    secrets: #inherit 
+      #Artifactory Creds
+      ARTIFACTORY_USER: ${{ secrets.TEST_ART_UNAME }}
+      ARTIFACTORY_PASSWORD: ${{ secrets.TEST_ART_PASSW }}
+      #ACR Creds
+      USER_NAME: "${{ secrets.TEST_ACR_UNAME }}"
+      PASSWORD: "${{ secrets.TEST_ACR_PASSW }}"
+      #New Relic
+      GWAM_NEWRELIC_NONPROD_LICENSE: "${{ secrets.GWAM_NEWRELIC_NONPROD_LICENSE }}"
+      GWAM_NEWRELIC_PROD_LICENSE: "${{ secrets.GWAM_NEWRELIC_PROD_LICENSE }}"
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      #AKS Creds
+      AZURE_CREDENTIALS_AKS_SPN: ${{ secrets.AZURE_CREDENTIALS_AKS_SPN }}
+      #SNOW Creds
+      SNOW_USER: ${{ secrets.SNOW_USER }}
+      SNOW_PASS: ${{ secrets.SNOW_PASS }}
+      #SNYK Creds
+      GWAM_SNYK_TOKEN: ${{ secrets.GWAM_SNYK_TOKEN }}
+    with:
+      envTag: ${{ github.event.inputs.action || 'dev' }}
+      config-file: ./aks-details/aks.json
+      changeTicketNumber: ${{ github.event.inputs.changeTicketNumber }}
+      branch: ${{ github.event.inputs.branch || github.head_ref }}

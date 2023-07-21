@@ -1,0 +1,20 @@
+{
+    "common":
+    {
+        "acrrepo":"ns-gwam-rps-gasvcs"
+    },
+    "dev":
+    {
+        "filename": "example-configmap.yml",
+        "registryname":"caaksprodcacacr.azurecr.io",
+        "clustername":"ca-dev-aks",
+        "resourcegroup":"ca-aks-dev-rg",
+        "namespace":"ns-gwam-rps-gasvcs-dev",
+        "appname":"example",
+        "deployment":"example-dp",
+        "newrelicappname":"ns-gwam-rps-gasvcs-dev-example",
+        "appenv":"development",
+        "deployment-file": "deployment-dev.yml",
+        "k8s-url": "https://aks-72908c76.privatelink.canadacentral.azmk8s.io:443"
+    }
+}

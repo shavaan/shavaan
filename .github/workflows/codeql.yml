@@ -12,23 +12,22 @@
 name: "CodeQL"
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ develop, release ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    branches: [ develop, release ]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
   schedule:
-    - cron: '37 16 * * 2'
+    - cron: '19 15 * * 5'
 
 jobs:
   analyze:
     name: Analyze
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners
-    # Consider using larger runners for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    runs-on: [self-hosted, x64, Linux, ets, gwam]
     timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
@@ -38,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [  ]
+        language: [ 'csharp' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby', 'swift' ]
         # Use only 'java' to analyze code written in Java, Kotlin or both
         # Use only 'javascript' to analyze code written in JavaScript, TypeScript or both
@@ -58,11 +57,25 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
 
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
+        queries: security-extended,security-and-quality
 
 
-    # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.*
+    - name: Removing Images from Local
+      run: |
+           ls 
+
+    - name: Restore dependencies
+      run: dotnet restore "./Example.Api/Example.Api.csproj"
+    
+    - name: Build
+      run: dotnet build "./Example.Api/Example.Api.csproj" /p:UseSharedCompilation=false --no-restore
+
     - name: Autobuild
       uses: github/codeql-action/autobuild@v2
 
