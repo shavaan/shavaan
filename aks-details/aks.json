@@ -1,7 +1,7 @@
 {
     "common":
     {
-        "acrrepo":"ns-gwam-rps-gasvcs",
+        "acrrepo":"ns-gwam-rps-gasvcs"
     },
     "dev":
     {
